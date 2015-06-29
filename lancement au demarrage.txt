@@ -1,0 +1,16 @@
+lancer un script python au demarrage
+
+rendre le script executable : sudo chmod +x /home/pi/Documents/testsql4.py
+
+creer un script shell :
+
+#!/bin/sh
+cd /home/pi/Documents/
+python testsql4.py
+
+Le rendre executable : chmod +x nomfichier
+
+
+éditer le fichier /etc/rc.local : sudo nano /etc/rc.local
+
+ajouter avant exit 0 : sh /home/pi/Documents/xxxxx.sh
