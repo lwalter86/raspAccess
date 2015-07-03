@@ -26,11 +26,14 @@ GPIO.setup(25, GPIO.IN)
 MASTER = '04F1D561EE0280'
 
 def main():
+    """
+    Fonction principale
+    """
     # Connexion a la base de donnee
     conn = sqlite3.connect('nfc2.db')
     curs = conn.cursor()
     mifare = nxppy.Mifare()
-    
+
     # Debut du programme
     while True:
         uid = ""
@@ -83,7 +86,7 @@ def main():
                             GPIO.output(17, GPIO.HIGH)    # Allumer LED verte
                             time.sleep(1)
                             GPIO.output(17, GPIO.LOW)    # Eteindre LED verte
-                    except:
+                    except nxppy.SelectError:
                         pass
 
                     time.sleep(1)
@@ -134,10 +137,10 @@ def main():
                             GPIO.output(18, GPIO.HIGH)    # Allumer LED rouge
                             time.sleep(1)
                             GPIO.output(18, GPIO.LOW)    # Eteindre LED rouge
-                    except:
+                    except nxppy.SelectError:
                         pass
             
-        except:
+        except nxppy.SelectError:
             pass
 
         lect = ""
@@ -159,7 +162,7 @@ def main():
                         print("on ferme")
                         time.sleep(1)
                     
-        except:
+        except nxppy.SelectError:
             pass
             
         
