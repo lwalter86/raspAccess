@@ -4,14 +4,14 @@
 
 """
 projet tuteuré 2014-2015
+repris par LW
 """
 
-# Importation des bibliotheque
+# Importation des bibliotheques
 from __future__ import print_function, division
 import RPi.GPIO as GPIO
 import time
 import nxppy
-#from nxppy import read_mifare
 import sqlite3
 
 # Definition des ports en entre/sortie
@@ -35,7 +35,7 @@ def main():
     while True:
         uid = ""
         try:
-            uid = mifare.select()
+            uid = mifare.select()              # Lecture et insertion dans une variable du numero de la carte NCF presentee
             print("UID=", uid)
         
             if uid == MASTER:                  # Si la carte maitre est detectee
@@ -111,7 +111,7 @@ def main():
 
                     suppr = ""
                     try:
-                        suppr = mifare;select()        # Lecture et insertion dans une variable du numero de la carte NCF presentee
+                        suppr = mifare.select()        # Lecture et insertion dans une variable du numero de la carte NCF presentee
                         curs.execute('SELECT * FROM carte')    # Lecture de la base de donnee
                         bas = curs.fetchall()            # Insertion BDD dans la variable bas
 
@@ -139,20 +139,12 @@ def main():
             
         except:
             pass
-            
-        #print('**********************')
-        #uid = nxppy.read_mifare()        # Lecture et insertion dans une variable du numero de la carte NCF presentee
 
-        
-        
-
-
-        #lect = nxppy.read_mifare()        # Lecture et insertion dans une variable du numero de la carte NCF presentee
         lect = ""
         try:
-            lect = mifare.select()
+            lect = mifare.select()         # Lecture et insertion dans une variable du numero de la carte NCF presentee
             print("LECT=", lect)
-            
+
             if GPIO.input(22) == 1:            # Si aucun bouton poussoir n est presse
                 if GPIO.input(25) == 1:
                     curs.execute('SELECT * FROM carte') # Lecture de la base de donnee
