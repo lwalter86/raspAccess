@@ -14,21 +14,33 @@ import time
 import nxppy
 import sqlite3
 import logging
+from logging.handlers import RotatingFileHandler
 
 # CONFIGURATION DES LOGS
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(logging.DEBUG)
+# création de l'objet logger qui va nous servir à écrire dans les logs
+logger = logging.getLogger()
+# on met le niveau du logger à DEBUG, comme ça il écrit tout
+logger.setLevel(logging.DEBUG)
 
-# create a file handler
-HANDLER = logging.FileHandler('/home/pi/LOGS/debug_raspAccess.log')
-HANDLER.setLevel(logging.INFO)
-# create a logging format
-FORMATTER = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-HANDLER.setFormatter(FORMATTER)
-# add the handlers to the logger
-LOGGER.addHandler(HANDLER)
+# création d'un formateur qui va ajouter le temps, le niveau
+# de chaque message quand on écrira un message dans le log
+formatter = logging.Formatter('%(asctime)s :: %(levelname)s :: %(message)s')
+# création d'un handler qui va rediriger une écriture du log vers
+# un fichier en mode 'append', avec 1 backup et une taille max de 10Mo
+file_handler = RotatingFileHandler('/home/pi/LOGS/LOG_raspAccess.log', 'a', 10000000, 1)
+# on lui met le niveau sur DEBUG, on lui dit qu'il doit utiliser le formateur
+# créé précédement et on ajoute ce handler au logger
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
-LOGGER.info('Start script')
+# création d'un second handler qui va rediriger chaque écriture de log
+# sur la console
+steam_handler = logging.StreamHandler()
+steam_handler.setLevel(logging.DEBUG)
+logger.addHandler(steam_handler)
+
+logger.info('Start script')
 
 # Definition des ports en entre/sortie
 GPIO.setmode(GPIO.BCM)
@@ -47,7 +59,7 @@ def lecture():
     data = ""
     try:
         data = mifare.select()
-        print("UID=", data)
+        logger.debug("UID=" + str(data))
     except nxppy.SelectError:
         pass
     return data
@@ -70,7 +82,7 @@ def main():
 
             # Condition pour l'AJOUT d une carte
             if (GPIO.input(22)==0):        # Si le bouton poussoir noir est appuye
-                print("Presente la carte a ajouter")
+                logger.debug("Presente la carte a ajouter")
                 # Clignotement LED
                 GPIO.output(17, GPIO.HIGH)    
                 time.sleep(0.4)
@@ -94,14 +106,14 @@ def main():
                 listebdd = curs.fetchall()        # Insertion BDD dans la variable listebdd
 
                 if str(uid) in str(listebdd):    # Si la carte est dans la BDD
-                    print('la carte ' + str(uid) + ' est deja autorisee')
+                    logger.debug('la carte ' + str(uid) + ' est deja autorisee')
                     GPIO.output(18, GPIO.HIGH)    # Allumer LED rouge
                 elif str(uid) == "None":        # Si pas de carte detectee
-                    print("Aucune carte detectee")
+                    logger.debug("Aucune carte detectee")
                     GPIO.output(18, GPIO.HIGH)    # Allumer LED rouge
                 else:
                     curs.execute("INSERT INTO carte (card) values (?)", (uid,))    # Ajout dans la BDD
-                    print('la carte ' + str(uid) + ' a ete ajoute')
+                    logger.info('la carte ' + str(uid) + ' a ete ajoute')
                     conn.commit()        # Enregistrement des modifications dans la BDD
                     GPIO.output(17, GPIO.HIGH)    # Allumer LED verte
                     time.sleep(1)
@@ -112,7 +124,7 @@ def main():
 
             #Condition pour la SUPPRESSION d une carte
             elif GPIO.input(25) == 0:        # Si le bouton poussoir rouge est appuye
-                print("Presente la carte a supprimer")
+                logger.debug("Presente la carte a supprimer")
                 GPIO.output(18, GPIO.HIGH)        # Clignotement LED rouge
                 time.sleep(0.4)
                 GPIO.output(18, GPIO.LOW)
@@ -133,35 +145,35 @@ def main():
                 bas = curs.fetchall()                  # Insertion BDD dans la variable bas
 
                 if uid == MASTER:        # Si on presente la carte maitre
-                    print("la carte maitre ne peut pas etre suprimmee")
+                    logger.warning("Tentative de suppression de la carte MAITRE")
                     GPIO.output(18, GPIO.HIGH)    # Allumer LED rouge
                     time.sleep(1)
                     GPIO.output(18, GPIO.LOW)    # Eteindre LED rouge
                 elif str(uid) in str(bas):         # Si la carte est dans la BDD
                     curs.execute("delete from carte where card=(?)", (uid,))    # Suppression dans la BDD
-                    print('la carte ' + str(uid) + ' a ete supprime')
+                    logger.info('la carte ' + str(uid) + ' a ete supprime')
                     conn.commit()        # Enregistrement des modifications dans la BDD
                     GPIO.output(17, GPIO.HIGH)    # Allumer LED verte
                     time.sleep(1)
                     GPIO.output(17, GPIO.LOW)    # Eteindre LED verte
                 else:
-                    print("La carte n est pas dans la base de donnee")
+                    logger.debug("La carte n est pas dans la base de donnee")
                     GPIO.output(18, GPIO.HIGH)    # Allumer LED rouge
                     time.sleep(1)
                     GPIO.output(18, GPIO.LOW)    # Eteindre LED rouge
 
-            if GPIO.input(22) == 1 and GPIO.input(25) == 1:            # Si aucun bouton poussoir n est presse
-                curs.execute('SELECT * FROM carte') # Lecture de la base de donnee
-                base = curs.fetchall()              # Insertion BDD dans la variable base
-                if str(uid) in str(base):          # Si la carte est dans la BDD
-                    print("allumer, c'est ouvert")
-                    GPIO.output(17, GPIO.HIGH)      # Allumer LED verte
-                    GPIO.output(4, GPIO.HIGH)       # Declencher relais
-                    time.sleep(5)
-                    GPIO.output(17, GPIO.LOW)       # Eteindre LED verte
-                    GPIO.output(4, GPIO.LOW)        # Arret du declenchement du relais
-                    print("on ferme")
-                    time.sleep(1)
+        if GPIO.input(22) == 1 and GPIO.input(25) == 1:            # Si aucun bouton poussoir n est presse
+            curs.execute('SELECT * FROM carte') # Lecture de la base de donnee
+            base = curs.fetchall()              # Insertion BDD dans la variable base
+            if str(uid) in str(base):          # Si la carte est dans la BDD
+                logger.info("Ouverture de la porte")
+                GPIO.output(17, GPIO.HIGH)      # Allumer LED verte
+                GPIO.output(4, GPIO.HIGH)       # Declencher relais
+                time.sleep(5)
+                GPIO.output(17, GPIO.LOW)       # Eteindre LED verte
+                GPIO.output(4, GPIO.LOW)        # Arret du declenchement du relais
+                logger.debug("Verrouillage de la porte")
+                time.sleep(1)
  
     conn.close()        # Fermeture de la connection avec la BDD
 
