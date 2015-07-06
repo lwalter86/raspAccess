@@ -162,7 +162,7 @@ def main():
                     time.sleep(1)
                     GPIO.output(18, GPIO.LOW)    # Eteindre LED rouge
 
-        if GPIO.input(22) == 1 and GPIO.input(25) == 1:            # Si aucun bouton poussoir n est presse
+        if uid != "" and GPIO.input(22) == 1 and GPIO.input(25) == 1:            # Si aucun bouton poussoir n est presse
             curs.execute('SELECT * FROM carte') # Lecture de la base de donnee
             base = curs.fetchall()              # Insertion BDD dans la variable base
             if str(uid) in str(base):          # Si la carte est dans la BDD
