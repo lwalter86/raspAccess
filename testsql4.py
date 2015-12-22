@@ -51,10 +51,10 @@ logger.info('Start script')
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 GPIO.setup(4, GPIO.OUT)
-GPIO.setup(17, GPIO.OUT)
-GPIO.setup(18, GPIO.OUT)
-GPIO.setup(22, GPIO.IN)
-GPIO.setup(25, GPIO.IN)
+#GPIO.setup(17, GPIO.OUT)
+#GPIO.setup(18, GPIO.OUT)
+#GPIO.setup(22, GPIO.IN)
+#GPIO.setup(25, GPIO.IN)
 
 MASTER = '04F1D561EE0280'
 
@@ -105,9 +105,9 @@ def main():
                 
                 # Clignotement LED
                 #for i in range(4):
-                    #GPIO.output(17, GPIO.HIGH)    
+                    #g_led.on()    
                     #time.sleep(0.4)
-                    #GPIO.output(17, GPIO.LOW)
+                    #g_led.off()
                     #time.sleep(0.4)
                 
                 g_led..blink(times=0, on_delay=0.4, off_delay=0.4) # blink forever
