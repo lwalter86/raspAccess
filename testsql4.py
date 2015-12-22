@@ -10,6 +10,11 @@ repris par LW
 # Importation des bibliotheques
 from __future__ import print_function, division
 import RPi.GPIO as GPIO
+
+import pingo
+from pingo.parts.led import Led
+#from pingo.parts.button import Switch
+
 import time
 import nxppy
 import sqlite3
@@ -66,6 +71,20 @@ def lecture():
 
 def main():
     """ Fonction principale """
+    
+    board = pingo.detect.get_board()
+
+    red_led_pin = board.pins[12] #GPIO18
+    r_led = Led(red_led_pin)
+    green_led_pin = board.pins[11] #GPIO17
+    g_led = Led(green_led_pin)
+    
+    r_led.off()
+    g_led.off()
+    
+    black_btn_pin = board.pins[15] #GPIO22
+    red_btn_pin = board.pins[22] #GPIO25
+    
     # Connexion a la base de donnee
     conn = sqlite3.connect('nfc2.db')
     curs = conn.cursor()
@@ -83,23 +102,15 @@ def main():
             # Condition pour l'AJOUT d une carte
             if (GPIO.input(22)==0):        # Si le bouton poussoir noir est appuye
                 logger.debug("Presente la carte a ajouter")
+                
                 # Clignotement LED
-                GPIO.output(17, GPIO.HIGH)    
-                time.sleep(0.4)
-                GPIO.output(17, GPIO.LOW)
-                time.sleep(0.4)
-                GPIO.output(17, GPIO.HIGH)
-                time.sleep(0.4)
-                GPIO.output(17, GPIO.LOW)
-                time.sleep(0.4)
-                GPIO.output(17, GPIO.HIGH)
-                time.sleep(0.4)
-                GPIO.output(17, GPIO.LOW)
-                time.sleep(0.4)
-                GPIO.output(17, GPIO.HIGH)
-                time.sleep(0.4)
-                GPIO.output(17, GPIO.LOW)
-                time.sleep(0.4)
+                #for i in range(4):
+                    #GPIO.output(17, GPIO.HIGH)    
+                    #time.sleep(0.4)
+                    #GPIO.output(17, GPIO.LOW)
+                    #time.sleep(0.4)
+                
+                g_led..blink(times=0, on_delay=0.4, off_delay=0.4) # blink forever
                 # Fin clignotement
 
                 curs.execute('SELECT * FROM carte')    # Lecture de la base de donnee
