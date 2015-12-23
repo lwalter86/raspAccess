@@ -50,7 +50,7 @@ logger.info('Start script')
 # Definition des ports en entre/sortie
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
-GPIO.setup(4, GPIO.OUT)
+GPIO.setup(4, GPIO.OUT) #Sortie relais
 #GPIO.setup(17, GPIO.OUT)
 #GPIO.setup(18, GPIO.OUT)
 #GPIO.setup(22, GPIO.IN)
@@ -104,13 +104,12 @@ def main():
                 logger.debug("Presente la carte a ajouter")
                 
                 # Clignotement LED
-                #for i in range(4):
-                    #g_led.on()    
-                    #time.sleep(0.4)
-                    #g_led.off()
-                    #time.sleep(0.4)
-                
-                g_led..blink(times=0, on_delay=0.4, off_delay=0.4) # blink forever
+                for i in range(4):
+                    g_led.on()    
+                    time.sleep(0.4)
+                    g_led.off()
+                    time.sleep(0.4)
+                #g_led.blink(times=0, on_delay=0.4, off_delay=0.4) # blink forever
                 # Fin clignotement
 
                 curs.execute('SELECT * FROM carte')    # Lecture de la base de donnee
@@ -118,17 +117,17 @@ def main():
 
                 if str(uid) in str(listebdd):    # Si la carte est dans la BDD
                     logger.debug('la carte ' + str(uid) + ' est deja autorisee')
-                    GPIO.output(18, GPIO.HIGH)    # Allumer LED rouge
+                    r_led.on()    # Allumer LED rouge
                 elif str(uid) == "None":        # Si pas de carte detectee
                     logger.debug("Aucune carte detectee")
-                    GPIO.output(18, GPIO.HIGH)    # Allumer LED rouge
+                    r_led.on()    # Allumer LED rouge
                 else:
                     curs.execute("INSERT INTO carte (card) values (?)", (uid,))    # Ajout dans la BDD
                     logger.info('la carte ' + str(uid) + ' a ete ajoute')
                     conn.commit()        # Enregistrement des modifications dans la BDD
-                    GPIO.output(17, GPIO.HIGH)    # Allumer LED verte
+                    g_led.on()    # Allumer LED verte
                     time.sleep(1)
-                    GPIO.output(17, GPIO.LOW)    # Eteindre LED verte
+                    g_led.off()    # Eteindre LED verte
 
                 time.sleep(1)
                 GPIO.output(18, GPIO.LOW)    # Eteindre LED rouge
@@ -136,52 +135,44 @@ def main():
             #Condition pour la SUPPRESSION d une carte
             elif GPIO.input(25) == 0:        # Si le bouton poussoir rouge est appuye
                 logger.debug("Presente la carte a supprimer")
-                GPIO.output(18, GPIO.HIGH)        # Clignotement LED rouge
-                time.sleep(0.4)
-                GPIO.output(18, GPIO.LOW)
-                time.sleep(0.4)
-                GPIO.output(18, GPIO.HIGH)
-                time.sleep(0.4)
-                GPIO.output(18, GPIO.LOW)
-                time.sleep(0.4)
-                GPIO.output(18, GPIO.HIGH)
-                time.sleep(0.4)
-                GPIO.output(18, GPIO.LOW)
-                time.sleep(0.4)
-                GPIO.output(18, GPIO.HIGH)
-                time.sleep(0.4)
-                GPIO.output(18, GPIO.LOW)
-
+                
+                for i in range(4):
+                    r_led.on()        # Clignotement LED rouge
+                    time.sleep(0.4)
+                    r_led.off()
+                    time.sleep(0.4)
+                #r_led.blink(times=0, on_delay=0.4, off_delay=0.4) # blink forever
+                
                 curs.execute('SELECT * FROM carte')    # Lecture de la base de donnee
                 bas = curs.fetchall()                  # Insertion BDD dans la variable bas
 
                 if uid == MASTER:        # Si on presente la carte maitre
                     logger.warning("Tentative de suppression de la carte MAITRE")
-                    GPIO.output(18, GPIO.HIGH)    # Allumer LED rouge
+                    r_led.on()    # Allumer LED rouge
                     time.sleep(1)
-                    GPIO.output(18, GPIO.LOW)    # Eteindre LED rouge
+                    r_led.off()    # Eteindre LED rouge
                 elif str(uid) in str(bas):         # Si la carte est dans la BDD
                     curs.execute("delete from carte where card=(?)", (uid,))    # Suppression dans la BDD
                     logger.info('la carte ' + str(uid) + ' a ete supprime')
                     conn.commit()        # Enregistrement des modifications dans la BDD
-                    GPIO.output(17, GPIO.HIGH)    # Allumer LED verte
+                    g_led.on()    # Allumer LED verte
                     time.sleep(1)
-                    GPIO.output(17, GPIO.LOW)    # Eteindre LED verte
+                    g_led.off()    # Eteindre LED verte
                 else:
                     logger.debug("La carte n est pas dans la base de donnee")
-                    GPIO.output(18, GPIO.HIGH)    # Allumer LED rouge
+                    r_led.on()    # Allumer LED rouge
                     time.sleep(1)
-                    GPIO.output(18, GPIO.LOW)    # Eteindre LED rouge
+                    r_led.off()    # Eteindre LED rouge
 
         if uid != "" and GPIO.input(22) == 1 and GPIO.input(25) == 1:            # Si aucun bouton poussoir n est presse
             curs.execute('SELECT * FROM carte') # Lecture de la base de donnee
             base = curs.fetchall()              # Insertion BDD dans la variable base
             if str(uid) in str(base):          # Si la carte est dans la BDD
                 logger.info("Ouverture de la porte")
-                GPIO.output(17, GPIO.HIGH)      # Allumer LED verte
+                g_led.on()      # Allumer LED verte
                 GPIO.output(4, GPIO.HIGH)       # Declencher relais
                 time.sleep(5)
-                GPIO.output(17, GPIO.LOW)       # Eteindre LED verte
+                g_led.off()       # Eteindre LED verte
                 GPIO.output(4, GPIO.LOW)        # Arret du declenchement du relais
                 logger.debug("Verrouillage de la porte")
                 time.sleep(1)
