@@ -100,7 +100,7 @@ def main():
         if uid == MASTER:                  # Si la carte maitre est detectee
 
             # Condition pour l'AJOUT d une carte
-            if (GPIO.input(22)==0):        # Si le bouton poussoir noir est appuye
+            if (black_btn_pin == pingo.LOW):        # Si le bouton poussoir noir est appuye
                 logger.debug("Presente la carte a ajouter")
                 
                 # Clignotement LED
@@ -130,7 +130,7 @@ def main():
                     g_led.off()    # Eteindre LED verte
 
                 time.sleep(1)
-                GPIO.output(18, GPIO.LOW)    # Eteindre LED rouge
+                r_led.off()    # Eteindre LED rouge
 
             #Condition pour la SUPPRESSION d une carte
             elif GPIO.input(25) == 0:        # Si le bouton poussoir rouge est appuye
@@ -164,7 +164,7 @@ def main():
                     time.sleep(1)
                     r_led.off()    # Eteindre LED rouge
 
-        if uid != "" and GPIO.input(22) == 1 and GPIO.input(25) == 1:            # Si aucun bouton poussoir n est presse
+        if uid != "" and red_btn_pin == pingo.HIGH and black_btn_pin == pingo.HIGH:            # Si aucun bouton poussoir n est presse
             curs.execute('SELECT * FROM carte') # Lecture de la base de donnee
             base = curs.fetchall()              # Insertion BDD dans la variable base
             if str(uid) in str(base):          # Si la carte est dans la BDD
