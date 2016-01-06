@@ -48,10 +48,7 @@ logger.addHandler(steam_handler)
 
 logger.info('Start script')
 
-# Definition des ports en entre/sortie
-GPIO.setmode(GPIO.BCM)
-GPIO.setwarnings(False)
-GPIO.setup(4, GPIO.OUT) #Sortie relais
+
 
 
 MASTER = '04F1D561EE0280'
@@ -66,13 +63,37 @@ def lecture():
     except nxppy.SelectError:
         pass
     return data
+    
+def createTable(db):
+    try:
+        cursor = db.cursor()
+        cursor.execute(''' CREATE TABLE IF NOT EXISTS carte(
+                              id INTEGER PRIMARY KEY, 
+                              card TEXT,
+                              m INTEGER) ''')
+        db.commit()
+        
+    except Exception as e:
+        # Roll back any change if something goes wrong
+        print("exception")
+        db.rollback()
+        raise e
+    
+    finally:
+        #db.close()
+        pass
 
 def main():
     """ Fonction principale """
     
+    # Definition des ports en entre/sortie
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setwarnings(False)
+    GPIO.setup(4, GPIO.OUT) #Sortie relais
+
     board = pingo.detect.get_board()
 
-    red_led_pin = board.pins[12] #GPIO18
+    red_led_pin = board.pins[12]   #GPIO18
     r_led = Led(red_led_pin)
     green_led_pin = board.pins[11] #GPIO17
     g_led = Led(green_led_pin)
@@ -81,22 +102,23 @@ def main():
     g_led.off()
     
     black_btn_pin = board.pins[15] #GPIO22
-    red_btn_pin = board.pins[22] #GPIO25
+    red_btn_pin = board.pins[22]   #GPIO25
     black_btn_pin.mode = pingo.IN
     red_btn_pin.mode = pingo.IN
     
-    #print(black_btn_pin.state)
-    #print(red_btn_pin.state)
-    
-    #g_led.on()
-    #r_led.on()
-    #time.sleep(2)
-    #g_led.off()
-    #r_led.off()
+    #Test leds
+    g_led.on()
+    r_led.on()
+    sleep(1)
+    g_led.off()
+    r_led.off()
     
     # Connexion a la base de donnee
     conn = sqlite3.connect('nfc2.db')
+    createTable(conn)
+    
     curs = conn.cursor()
+    
 
     # Debut du programme
     while True:
@@ -109,12 +131,12 @@ def main():
         #************************************
         if uid == MASTER:                  # Si la carte maitre est detectee
 
-            # Condition pour l'AJOUT d une carte
+        # Condition pour l'AJOUT d une carte
             if (black_btn_pin.state == pingo.LOW):        # Si le bouton poussoir noir est appuye
                 logger.debug("Presente la carte a ajouter")
 
-                # Clignotement LED
-                # Donne aussi le temps de présenter la carte
+                # Clignotement LED verte
+                # Donne aussi le temps de présenter la carte a enregistrer
                 for i in range(4):
                     g_led.on()    
                     sleep(0.4)
@@ -122,6 +144,8 @@ def main():
                     sleep(0.4)
                 #g_led.blink(times=5, on_delay=0.4, off_delay=0.4) # blink
                 # Fin clignotement
+                
+                uid = lecture()
                 
                 curs.execute('SELECT * FROM carte')    # Lecture de la base de donnee
                 listebdd = curs.fetchall()        # Insertion BDD dans la variable listebdd
@@ -144,7 +168,7 @@ def main():
                 sleep(1)
                 r_led.off()    # Eteindre LED rouge
 
-            #Condition pour la SUPPRESSION d une carte
+        #Condition pour la SUPPRESSION d une carte
             elif red_btn_pin.state == pingo.LOW:        # Si le bouton poussoir rouge est appuye
                 logger.debug("Presente la carte a supprimer")
                 
@@ -157,6 +181,8 @@ def main():
                     r_led.off()
                     sleep(0.4)
                 #r_led.blink(times=4, on_delay=0.4, off_delay=0.4) # blink forever
+                
+                uid = lecture()
                 
                 curs.execute('SELECT * FROM carte')    # Lecture de la base de donnee
                 bas = curs.fetchall()                  # Insertion BDD dans la variable bas
