@@ -176,7 +176,7 @@ def main():
         if uid == MASTER:                  # Si la carte maitre est detectee
 
         # Condition pour l'AJOUT d une carte
-            if (black_btn_pin.state == pingo.LOW):        # Si le bouton poussoir noir est appuye
+            if (black_btn_pin.state == pingo.LOW and red_btn_pin.state == pingo.HIGH):        # Si seul le bouton poussoir noir est appuye
                 logger.debug("Presente la carte a ajouter")
 
                 # Clignotement LED verte
@@ -212,7 +212,7 @@ def main():
                 r_led.off()    # Eteindre LED rouge
 
         #Condition pour la SUPPRESSION d une carte
-            elif red_btn_pin.state == pingo.LOW:        # Si le bouton poussoir rouge est appuye
+            elif (black_btn_pin.state == pingo.HIGH and red_btn_pin.state == pingo.LOW):      # Si seul le bouton poussoir rouge est appuye
                 logger.debug("Presente la carte a supprimer")
                 
                 
