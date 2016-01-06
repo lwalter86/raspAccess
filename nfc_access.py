@@ -61,8 +61,9 @@ def lecture():
         pass
     return data
     
-def createTable(db):
+def createTable(dbname):
     try:
+        db = sqlite3.connect(dbname)
         cursor = db.cursor()
         cursor.execute(''' CREATE TABLE IF NOT EXISTS carte(
                               id INTEGER PRIMARY KEY, 
@@ -72,22 +73,72 @@ def createTable(db):
         
     except Exception as e:
         # Roll back any change if something goes wrong
-        print("exception")
+        logger.debug("Erreur lors de la creation de la table")
         db.rollback()
         raise e
     
     finally:
-        #db.close()
-        pass
+        db.close()
 
+def insertcard(dbname, uid):
+    try:
+        db = sqlite3.connect(dbname)
+        cursor = db.cursor()
+        cursor.execute('''INSERT INTO carte (card) values (?)''' , (uid,))
+        db.commit()
+        
+    except Exception as e:
+        # Roll back any change if something goes wrong
+        logger.debug("Erreur lors de l'execution du script SQL")
+        db.rollback()
+        raise e
+    
+    finally:
+        db.close()
+
+def deletecard(dbname, uid):
+    try:
+        db = sqlite3.connect(dbname)
+        cursor = db.cursor()
+        cursor.execute('''delete from carte where card=(?)''' , (uid,))
+        db.commit()
+        
+    except Exception as e:
+        # Roll back any change if something goes wrong
+        logger.debug("Erreur lors de l'execution du script SQL")
+        db.rollback()
+        raise e
+    
+    finally:
+        db.close()
+
+def getlisteofcards(dbname):
+    try:
+        db = sqlite3.connect(dbname)
+        cursor = db.cursor()
+        cursor.execute('''SELECT * FROM carte''')
+        listebdd = cursor.fetchall()
+        
+    except Exception as e:
+        # Roll back any change if something goes wrong
+        logger.debug("Erreur lors de l'execution du script SQL")
+        db.rollback()
+        raise e
+    
+    finally:
+        db.close()
+        return listebdd
+        
 def main():
     """ Fonction principale """
     MASTER = '04F1D561EE0280'
+    BDD_NAME = "nfc2.db"
     
     # Definition des ports en entre/sortie
     GPIO.setmode(GPIO.BCM)
     GPIO.setwarnings(False)
     GPIO.setup(4, GPIO.OUT) #Sortie relais
+    GPIO.output(4, GPIO.LOW) #initialise la sortie relais
 
     board = pingo.detect.get_board()
 
@@ -111,18 +162,13 @@ def main():
     g_led.off()
     r_led.off()
     
-    # Connexion a la base de donnee
-    conn = sqlite3.connect('nfc2.db')
-    createTable(conn)
+    # Creation de la table si elle n'existe pas
+    createTable(BDD_NAME)
     
-    curs = conn.cursor()
-    
-
     # Debut du programme
     while True:
 
-        uid = lecture()
-        
+        uid = lecture()        
         
         #************************************
         #*** Detection de la carte MASTER ***
@@ -144,9 +190,8 @@ def main():
                 # Fin clignotement
                 
                 uid = lecture()
-                
-                curs.execute('SELECT * FROM carte')    # Lecture de la base de donnee
-                listebdd = curs.fetchall()        # Insertion BDD dans la variable listebdd
+
+                listebdd = getlisteofcards(BDD_NAME) # Lecture de la base de donnee
 
                 if str(uid) in str(listebdd):    # Si la carte est dans la BDD
                     logger.debug('la carte ' + str(uid) + ' est deja autorisee')
@@ -155,9 +200,9 @@ def main():
                     logger.debug("Aucune carte detectee")
                     r_led.on()    # Allumer LED rouge
                 else:
-                    curs.execute("INSERT INTO carte (card) values (?)", (uid,))    # Ajout dans la BDD
+                    insertcard(BDD_NAME, uid)
                     logger.info('la carte ' + str(uid) + ' a ete ajoute')
-                    conn.commit()        # Enregistrement des modifications dans la BDD
+                    
                     g_led.on()    # Allumer LED verte
                     sleep(1)
                     g_led.off()    # Eteindre LED verte
@@ -182,18 +227,18 @@ def main():
                 
                 uid = lecture()
                 
-                curs.execute('SELECT * FROM carte')    # Lecture de la base de donnee
-                bas = curs.fetchall()                  # Insertion BDD dans la variable bas
-
+                listebdd = getlisteofcards(BDD_NAME) # Lecture de la base de donnee
+                
                 if uid == MASTER:        # Si on presente la carte maitre
                     logger.warning("Tentative de suppression de la carte MAITRE")
                     r_led.on()    # Allumer LED rouge
                     sleep(1)
                     r_led.off()    # Eteindre LED rouge
-                elif str(uid) in str(bas):         # Si la carte est dans la BDD
-                    curs.execute("delete from carte where card=(?)", (uid,))    # Suppression dans la BDD
+                elif str(uid) in str(listebdd):         # Si la carte est dans la BDD
+                    deletecard(BDD_NAME, uid)
+                    #curs.execute("delete from carte where card=(?)", (uid,))    # Suppression dans la BDD
                     logger.info('la carte ' + str(uid) + ' a ete supprime')
-                    conn.commit()        # Enregistrement des modifications dans la BDD
+                    #conn.commit()        # Enregistrement des modifications dans la BDD
                     g_led.on()    # Allumer LED verte
                     sleep(1)
                     g_led.off()    # Eteindre LED verte
@@ -204,9 +249,10 @@ def main():
                     r_led.off()    # Eteindre LED rouge
 
         if uid != "" and red_btn_pin.state == pingo.HIGH and black_btn_pin.state == pingo.HIGH:            # Si aucun bouton poussoir n est presse
-            curs.execute('SELECT * FROM carte') # Lecture de la base de donnee
-            base = curs.fetchall()              # Insertion BDD dans la variable base
-            if str(uid) in str(base):          # Si la carte est dans la BDD
+
+            listebdd = getlisteofcards(BDD_NAME) # Lecture de la base de donnee
+            
+            if str(uid) in str(listebdd):          # Si la carte est dans la BDD
                 logger.info("Ouverture de la porte")
                 g_led.on()      # Allumer LED verte
                 GPIO.output(4, GPIO.HIGH)       # Declencher relais
@@ -215,8 +261,6 @@ def main():
                 GPIO.output(4, GPIO.LOW)        # Arret du declenchement du relais
                 logger.debug("Verrouillage de la porte")
                 sleep(1)
- 
-    conn.close()        # Fermeture de la connection avec la BDD
 
 if __name__ == "__main__":
     main()
