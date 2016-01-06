@@ -50,9 +50,6 @@ logger.info('Start script')
 
 
 
-
-MASTER = '04F1D561EE0280'
-
 def lecture():
     """ Lecture d'une carte NFC """
     mifare = nxppy.Mifare()
@@ -85,6 +82,7 @@ def createTable(db):
 
 def main():
     """ Fonction principale """
+    MASTER = '04F1D561EE0280'
     
     # Definition des ports en entre/sortie
     GPIO.setmode(GPIO.BCM)
