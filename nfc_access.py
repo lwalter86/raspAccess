@@ -73,7 +73,7 @@ def createTable(dbname):
         
     except Exception as e:
         # Roll back any change if something goes wrong
-        logger.debug("Erreur lors de la creation de la table")
+        logger.info("Erreur lors de la creation de la table")
         db.rollback()
         raise e
     
@@ -86,6 +86,7 @@ def insertcard(dbname, uid):
         cursor = db.cursor()
         cursor.execute('''INSERT INTO carte (card) values (?)''' , (uid,))
         db.commit()
+        logger.info("la carte %s a ete ajoute" % (uid))
         
     except Exception as e:
         # Roll back any change if something goes wrong
@@ -102,6 +103,7 @@ def deletecard(dbname, uid):
         cursor = db.cursor()
         cursor.execute('''delete from carte where card=(?)''' , (uid,))
         db.commit()
+        logger.info('la carte %s a ete supprime' % (uid))
         
     except Exception as e:
         # Roll back any change if something goes wrong
@@ -201,7 +203,6 @@ def main():
                     r_led.on()    # Allumer LED rouge
                 else:
                     insertcard(BDD_NAME, uid)
-                    logger.info('la carte ' + str(uid) + ' a ete ajoute')
                     
                     g_led.on()    # Allumer LED verte
                     sleep(1)
@@ -235,25 +236,25 @@ def main():
                     sleep(1)
                     r_led.off()    # Eteindre LED rouge
                 elif str(uid) in str(listebdd):         # Si la carte est dans la BDD
-                    deletecard(BDD_NAME, uid)
-                    #curs.execute("delete from carte where card=(?)", (uid,))    # Suppression dans la BDD
-                    logger.info('la carte ' + str(uid) + ' a ete supprime')
-                    #conn.commit()        # Enregistrement des modifications dans la BDD
+                    deletecard(BDD_NAME, uid)           # Suppression dans la BDD
+ 
+                    
+
                     g_led.on()    # Allumer LED verte
                     sleep(1)
                     g_led.off()    # Eteindre LED verte
                 else:
-                    logger.debug("La carte n est pas dans la base de donnee")
+                    logger.debug("La carte %s n est pas dans la base de donnee" % (uid))
                     r_led.on()    # Allumer LED rouge
                     sleep(1)
                     r_led.off()    # Eteindre LED rouge
 
-        if uid != "" and red_btn_pin.state == pingo.HIGH and black_btn_pin.state == pingo.HIGH:            # Si aucun bouton poussoir n est presse
+        if (uid != "" and red_btn_pin.state == pingo.HIGH and black_btn_pin.state == pingo.HIGH): # Si aucun bouton poussoir n est presse
 
             listebdd = getlisteofcards(BDD_NAME) # Lecture de la base de donnee
             
             if str(uid) in str(listebdd):          # Si la carte est dans la BDD
-                logger.info("Ouverture de la porte")
+                logger.info("%s ouvre de la porte" % (uid))
                 g_led.on()      # Allumer LED verte
                 GPIO.output(4, GPIO.HIGH)       # Declencher relais
                 sleep(5)
